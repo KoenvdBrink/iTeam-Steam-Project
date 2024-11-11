@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 import requests
 import datetime
 from datetime import datetime
@@ -62,3 +64,15 @@ def offline_for(steam_id):
         return -1
     else:
         return abs(divmod((now - then).total_seconds(),3600)[0])
+
+def most_played_games(steam_id):
+    """
+
+    :param steam_id:
+    :return:
+    """
+    played_games = get_owned_games(steamid)['response']['games']
+
+played_games = sorted(get_owned_games(steamid)['response']['games'], key=itemgetter('playtime_forever'), reverse=True)
+for x in played_games:
+    print(x)
