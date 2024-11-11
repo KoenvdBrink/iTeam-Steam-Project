@@ -12,11 +12,10 @@ zack = "76561198055954925"
 
 def get_player_summ(steam_id):
     """
-    Returns basic profile information for a list of 64-bit Steam IDs.
-    https://developer.valvesoftware.com/wiki/Steam_Web_API#GetGlobalAchievementPercentagesForApp_.28v0001.29
-    for detailed information about returned dictionary contents.
-    :param steam_id: int
-    :return: Dict
+    Returns basic profile information for a given 64-bit Steam ID.
+
+    :param steam_id: str, Steam user's 64-bit ID
+    :return: dict containing profile information
     """
     url = f'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/'
     params = {
@@ -28,9 +27,10 @@ def get_player_summ(steam_id):
 
 def get_owned_games(steam_id):
     """
+    Returns a list of owned games sorted by playtime in descending order.
 
-    :param steam_id:
-    :return:
+    :param steam_id: str, Steam user's 64-bit ID
+    :return: list of dicts, each containing game details
     """
     url = f'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/'
     params = {
@@ -45,9 +45,10 @@ def get_owned_games(steam_id):
 
 def last_logged_off(steam_id):
     """
-    Gives the date the user last logged off on steam.
-    :param steam_id: int
-    :return: str
+    Returns the datetime of the user's last logoff.
+
+    :param steam_id: str, Steam user's 64-bit ID
+    :return: datetime of last logoff
     """
     time_unix = get_player_summ(steam_id)['response']['players'][0]['lastlogoff']
     return datetime.fromtimestamp(time_unix)
@@ -55,26 +56,27 @@ def last_logged_off(steam_id):
 
 def offline_for(steam_id):
     """
-    calculates the amount of hours it has been since the user last logged off on steam.
-    rounds down to the nearest full hour.
-    returns -1 of the user is online
-    :param steam_id: int
-    :return: float/int
+    Calculates the number of hours since the user last logged off.
+
+    :param steam_id: str, Steam user's 64-bit ID
+    :return: int, hours since last logoff, or -1 if online
     """
-    now = datetime.now()
-    then = last_logged_off(steam_id)
-    if get_player_summ(steam_id)['response']['players'][0]['personastate'] != 0:
+    user_data = get_player_summ(steam_id)['response']['players'][0]
+    if user_data['personastate'] != 0:
         return -1
-    else:
-        return abs(divmod((now - then).total_seconds(),3600)[0])
+    last_logoff_time = datetime.fromtimestamp(user_data['lastlogoff'])
+    hours_offline = int((datetime.now() - last_logoff_time).total_seconds() // 3600)
+    return hours_offline
 
-def most_played_games(steam_id):
+def most_played_games(steam_id, top_n=5):
     """
+    Prints the user's top N most played games.
 
-    :param steam_id:
-    :return:
+    :param steam_id: str, Steam user's 64-bit ID
+    :param top_n: int, number of top games to display
     """
     played_games = get_owned_games(steam_id)
-    for i in range(5):
-        print(f'Your number {i+1} most played game is {played_games[i]['name']} '
-              f'with {played_games[i]['playtime_forever']//60} hours.')
+    top_games = played_games[:top_n]
+    for i, game in enumerate(top_games, start=1):
+        print(f'Your number {i} most played game is {game["name"]} '
+              f'with {game["playtime_forever"] // 60} hours.')
