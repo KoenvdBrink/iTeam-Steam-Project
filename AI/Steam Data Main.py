@@ -5,7 +5,8 @@ import datetime
 from datetime import datetime
 
 api_key = "5409DBECBF319D8375208A2EC86A66FE"
-steamid = "76561198030044972"
+koen = "76561198030044972"
+zack = "76561198055954925"
 
 
 
@@ -35,10 +36,12 @@ def get_owned_games(steam_id):
     params = {
         'key': api_key,
         'steamid': steam_id,
+        'include_appinfo': True,
         'format': 'json'
     }
-    response = requests.get(url, params=params)
-    return response.json()
+    response = requests.get(url, params=params).json()
+    played_games = sorted(response['response']['games'],key=itemgetter('playtime_forever'), reverse=True)
+    return played_games
 
 def last_logged_off(steam_id):
     """
@@ -71,8 +74,7 @@ def most_played_games(steam_id):
     :param steam_id:
     :return:
     """
-    played_games = get_owned_games(steamid)['response']['games']
-
-played_games = sorted(get_owned_games(steamid)['response']['games'], key=itemgetter('playtime_forever'), reverse=True)
-for x in played_games:
-    print(x)
+    played_games = get_owned_games(steam_id)
+    for i in range(5):
+        print(f'Your number {i+1} most played game is {played_games[i]['name']} '
+              f'with {played_games[i]['playtime_forever']//60} hours.')
