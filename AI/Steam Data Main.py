@@ -1,3 +1,4 @@
+import time
 from operator import itemgetter
 
 import requests
@@ -7,6 +8,7 @@ from datetime import datetime
 api_key = "5409DBECBF319D8375208A2EC86A66FE"
 koen = "76561198030044972"
 zack = "76561198055954925"
+test = "76561197974698915"
 
 
 
@@ -80,3 +82,15 @@ def most_played_games(steam_id, top_n=5):
     for i, game in enumerate(top_games, start=1):
         print(f'Your number {i} most played game is {game["name"]} '
               f'with {game["playtime_forever"] // 60} hours.')
+
+def is_online(steam_id):
+    """
+    Checks if user is online.
+    :param steam_id: str, Steam user's 64-bit ID
+    :return: Boolean, True if user is online, False if user is offline
+    """
+    user_data = get_player_summ(steam_id)['response']['players'][0]
+    if user_data['personastate'] != 0:
+        return True
+    else:
+        return False
