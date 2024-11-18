@@ -9,6 +9,7 @@ api_key = "5409DBECBF319D8375208A2EC86A66FE"
 koen = "76561198030044972"
 zack = "76561198055954925"
 test = "76561197974698915"
+test2 = "76561198285646362"
 
 
 
@@ -94,5 +95,6 @@ def is_online(steam_id):
         return True
     else:
         return False
+
 
 
