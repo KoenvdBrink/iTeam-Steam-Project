@@ -22,11 +22,10 @@ def update_dashboard(steam_id, gui):
         name = player['personaname']
         online_status = "Online" if is_online(steam_id) else f"Offline sinds {offline_for(steam_id)} uur"
 
-        # Gebruik fallback voor lastlogoff
-        last_logoff_time = player.get('lastlogoff')
-        if last_logoff_time:
-            last_logoff_time = datetime.fromtimestamp(last_logoff_time).strftime("%Y-%m-%d %H:%M:%S")
-        else:
+        # Gebruik last_logged_off functie
+        try:
+            last_logoff_time = last_logged_off(steam_id).strftime("%Y-%m-%d %H:%M:%S")
+        except KeyError:
             last_logoff_time = "Niet beschikbaar"
 
         # Top 5 meest gespeelde games
