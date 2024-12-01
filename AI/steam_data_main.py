@@ -80,9 +80,11 @@ def most_played_games(steam_id, top_n=5):
     """
     played_games = get_owned_games(steam_id)
     top_games = played_games[:top_n]
+    result = []
     for i, game in enumerate(top_games, start=1):
-        print(f'Your number {i} most played game is {game["name"]} '
-              f'with {game["playtime_forever"] // 60} hours.')
+        result.append(f"{i}. {game['name']} - {game['playtime_forever'] // 60} uren gespeeld")
+        
+    return result
 
 def is_online(steam_id):
     """

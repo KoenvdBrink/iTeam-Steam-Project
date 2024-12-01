@@ -8,7 +8,8 @@ from steam_data_main import (
     offline_for,
     last_logged_off,
     get_owned_games,
-    is_online
+    is_online,
+    most_played_games
 )
 
 def update_dashboard(steam_id, gui):
@@ -19,10 +20,8 @@ def update_dashboard(steam_id, gui):
         online_status = "Online" if is_online(steam_id) else f"Offline sinds {offline_for(steam_id)} uur"
         last_logoff_time = last_logged_off(steam_id).strftime("%Y-%m-%d %H:%M:%S")
 
-        top_games = []
-        played_games = get_owned_games(steam_id) # Gebruik ter vervanging voor most_played_games
-        for i, game in enumerate(played_games[:5], start=1): 
-            top_games.append(f"{i}. {game['name']} - {game['playtime_forever'] // 60} uren gespeeld")
+        # Top 5 meest gespeelde games (direct via most_played_games)
+        top_games = most_played_games(steam_id, top_n=5)
 
         # Alle spellen (alleen namen voor nu)
         all_games = [game['name'] for game in get_owned_games(steam_id)[:15]]
