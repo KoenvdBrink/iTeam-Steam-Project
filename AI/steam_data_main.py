@@ -43,13 +43,6 @@ def get_owned_games(steam_id):
     played_games = sorted(response['response']['games'],key=itemgetter('playtime_forever'), reverse=True)
     return played_games
 
-def get_app_info(app_id):
-    url = f"http://store.steampowered.com/api/appdetails?appids={app_id}"
-    response = requests.get(url).json()
-    app_data = response.get(str(app_id))
-    data = app_data.get('data', {})
-    return data
-
 def last_logged_off(steam_id):
     """
     Returns the datetime of the user's last logoff.
@@ -59,7 +52,6 @@ def last_logged_off(steam_id):
     """
     time_unix = get_player_summ(steam_id)['response']['players'][0]['lastlogoff']
     return datetime.fromtimestamp(time_unix)
-
 
 def offline_for(steam_id):
     """
@@ -102,6 +94,59 @@ def is_online(steam_id):
     else:
         return False
 
-info = get_app_info(271590)
-for x in info:
-    print(x, ':', info[x])
+def get_app_info(app_id):
+    """
+
+    :param app_id:
+    :return:
+    """
+    url = f"http://store.steampowered.com/api/appdetails?appids={app_id}"
+    response = requests.get(url).json()
+    app_data = response.get(str(app_id))
+    data = app_data.get('data', {})
+    return data
+
+def average_playtime(steam_id):
+    """
+    Calculates the average minutes the user has played the games in their library with more than 60 minutes played.
+    :param steam_id: str, Steam user's 64-bit ID
+    :return: int, Average playtime in minutes
+    """
+    user_data = get_owned_games(steam_id)
+    played_games = 0
+    total_played = 0
+    for game in user_data:
+        if game['playtime_forever'] < 1:
+            break
+        else:
+            played_games += 1
+            total_played += int(game['playtime_forever'])
+    if played_games == 0:
+        return 0
+    return int(total_played / played_games)
+
+def median_playtime(steam_id):
+    """
+    Calculates the median gametime (in minutes) the user has played all the games
+    with more thatn 60 minutes gametime in their steam library
+    :param steam_id:
+    :return: int, median gametime in minutes
+    """
+    user_data = get_owned_games(steam_id)
+    gametime = []
+    games = []
+    median = None
+    for game in user_data:
+        if game['playtime_forever'] < 1:
+            break
+        else:
+            games.append(game['name'])
+            gametime.append(int(game['playtime_forever']))
+    gametime.sort()
+    n = len(gametime)
+    if n % 2 == 0:
+        median = (gametime[n//2 - 1] + gametime[n//2]) / 2
+    else:
+        median = gametime[n // 2]
+    return median
+
