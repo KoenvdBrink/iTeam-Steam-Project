@@ -1,4 +1,5 @@
 import time
+from http.client import responses
 from operator import itemgetter
 
 import requests
@@ -9,7 +10,6 @@ api_key = "5409DBECBF319D8375208A2EC86A66FE"
 koen = "76561198030044972"
 zack = "76561198055954925"
 test = "76561197974698915"
-test2 = "76561198285646362"
 
 
 
@@ -45,6 +45,13 @@ def get_owned_games(steam_id):
     response = requests.get(url, params=params).json()
     played_games = sorted(response['response']['games'],key=itemgetter('playtime_forever'), reverse=True)
     return played_games
+
+def get_app_info(app_id):
+    url = f"http://store.steampowered.com/api/appdetails?appids={app_id}"
+    response = requests.get(url).json()
+    app_data = response.get(str(app_id))
+    data = app_data.get('data', {})
+    return data
 
 def last_logged_off(steam_id):
     """
@@ -96,5 +103,6 @@ def is_online(steam_id):
     else:
         return False
 
-
-
+info = get_app_info(271590)
+for x in info:
+    print(x, ':', info[x])
