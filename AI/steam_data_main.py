@@ -2,13 +2,19 @@ from operator import itemgetter
 import requests
 import datetime
 from datetime import datetime
+import csv
+import steamspypi
+from tqdm import tqdm
 
+input_file = "filtered_steam_games.csv"
+output_file = "app_details.csv"
 api_key = "5409DBECBF319D8375208A2EC86A66FE"
 koen = "76561198030044972"
 zack = "76561198055954925"
 test = "76561197974698915"
-
-
+app_ids = []
+user_scores = []
+peak_players = []
 
 def get_player_summ(steam_id):
     """
@@ -40,8 +46,11 @@ def get_owned_games(steam_id):
         'format': 'json'
     }
     response = requests.get(url, params=params).json()
-    played_games = sorted(response['response']['games'],key=itemgetter('playtime_forever'), reverse=True)
-    return played_games
+    if 'response' in response and 'games' in response['response']:
+        played_games = sorted(response['response']['games'], key=itemgetter('playtime_forever'), reverse=True)
+        return played_games
+
+    return []
 
 def last_logged_off(steam_id):
     """
@@ -150,3 +159,159 @@ def median_playtime(steam_id):
         median = gametime[n // 2]
     return median
 
+def get_metacritic_score(app_id):
+    """
+
+    :param app_id:
+    :return:
+    """
+    url = f"https://store.steampowered.com/api/appdetails?appids={app_id}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if data[str(app_id)]['success']:
+            app_data = data[str(app_id)]['data']
+            metacritic = app_data.get('metacritic')
+            if metacritic:
+                return metacritic['score']
+            else:
+                return None
+    return None
+
+def get_player_count(appid):
+    url = f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={appid}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        return data.get("response", {}).get("player_count", 0)  # Returns player count or 0 if not found
+    else:
+        print(f"Failed to fetch player count for appid {appid}.")
+        return 0
+
+def get_playtime_for_app(steam_id, app_id):
+    """
+    Returns the average playtime (in hours) for a specific appID if the user owns it.
+
+    :param steam_id: str, Steam user's 64-bit ID
+    :param app_id: int, The appID of the game
+    :return: float, Average playtime in hours, or 0 if the game is not owned
+    """
+    owned_games = get_owned_games(steam_id)
+    for game in owned_games:
+        if game['appid'] == app_id:
+            playtime_minutes = game['playtime_forever']
+            playtime_hours = playtime_minutes / 60  # Convert to hours
+            return round(playtime_hours, 2)
+    return 0  # Game not owned or no playtime recorded
+
+def read_app_ids_from_csv(input_file):
+    """
+    Reads app IDs from a CSV file and returns them as a list of integers.
+
+    :param input_file: str, Path to the CSV file.
+    :return: list of int, List of app IDs.
+    """
+    app_ids = []
+    with open(input_file, mode='r', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            app_ids.append(int(row['app_id']))  # Convert to int
+    return app_ids
+
+def fetch_app_details(app_ids, output_file="app_details.csv"):
+    """
+    Fetches average playtime, median playtime, user score, and peak concurrent players
+    for a list of app IDs and writes the data to a CSV file, with a progress bar.
+
+    :param app_ids: list of int, Steam app IDs.
+    :param output_file: str, Path to the output CSV file.
+    """
+    app_data_list = []
+
+    # Progress bar for app IDs
+    for app_id in tqdm(app_ids, desc="Fetching App Details"):
+        # Create the request
+        data_request = {
+            'request': 'appdetails',
+            'appid': str(app_id)
+        }
+
+        try:
+            # Fetch the data
+            data = steamspypi.download(data_request)
+
+            # Check if data exists
+            if not data:
+                print(f"No data found for app ID {app_id}")
+                continue
+
+            # Extract required fields
+            app_name = data.get('name', 'Unknown')
+            avg_playtime = data.get('average_forever', 0)  # Average playtime (minutes)
+            median_playtime = data.get('median_forever', 0)  # Median playtime (minutes)
+            positive = data.get('positive', 0)
+            negative = data.get('negative', 0)
+
+            # Fetch peak players using your get_player_count function
+            peak_players = get_player_count(app_id)
+
+            # Calculate userscore manually
+            total_reviews = positive + negative
+            user_score = (positive / total_reviews) * 100 if total_reviews > 0 else 0
+
+            # Append data to the list
+            app_data_list.append({
+                'AppID': app_id,
+                'Name': app_name,
+                'Average Playtime (hrs)': round(avg_playtime / 60, 2),  # Convert to hours
+                'Median Playtime (hrs)': round(median_playtime / 60, 2),  # Convert to hours
+                'User Score (%)': round(user_score, 2),  # Manually calculated userscore
+                'Peak Players': peak_players  # Peak concurrent players
+            })
+
+        except Exception as e:
+            print(f"Error fetching data for app ID {app_id}: {e}")
+            continue
+
+    # Write data to CSV
+    with open(output_file, mode='w', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['AppID', 'Name', 'Average Playtime (hrs)', 'Median Playtime (hrs)', 'User Score (%)',
+                      'Peak Players']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        writer.writerows(app_data_list)
+
+    print(f"Data written to {output_file}")
+
+def normalize_data(data):
+    min_val = min(data)
+    max_val = max(data)
+    return [(x - min_val) / (max_val - min_val) for x in data]
+
+def gradient_descent(x, y, num_iterations=10000, learning_rate=0.0001):
+    c = [0, 0]
+    for i in range(num_iterations):
+        for i in range(len(x)):
+            prediction = c[0] + c[1] * x[i]
+            error = prediction - y[i]
+            c[0] -= error * learning_rate
+            c[1] -= error * x[i] * learning_rate
+    return c
+
+
+with open(output_file, mode="r", encoding="utf-8") as file:
+    reader = csv.DictReader(file)
+    for row in reader:
+        app_ids.append(row["AppID"])
+        user_scores.append(float(row["User Score (%)"]))
+        peak_players.append(float(row["Peak Players"]))
+
+normalized_user_scores = normalize_data(user_scores)
+normalized_peak_players = normalize_data(peak_players)
+
+coefficients = gradient_descent(normalized_peak_players, normalized_user_scores)
+
+print(f"Gradient Descent Coefficients:")
+print(f"Intercept (c[0]): {coefficients[0]}")
+print(f"Slope (c[1]): {coefficients[1]}")
