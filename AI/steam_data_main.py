@@ -300,18 +300,18 @@ def gradient_descent(x, y, num_iterations=10000, learning_rate=0.0001):
     return c
 
 
-with open(output_file, mode="r", encoding="utf-8") as file:
-    reader = csv.DictReader(file)
-    for row in reader:
-        app_ids.append(row["AppID"])
-        user_scores.append(float(row["User Score (%)"]))
-        peak_players.append(float(row["Peak Players"]))
-
-normalized_user_scores = normalize_data(user_scores)
-normalized_peak_players = normalize_data(peak_players)
-
-coefficients = gradient_descent(normalized_peak_players, normalized_user_scores)
-
-print(f"Gradient Descent Coefficients:")
-print(f"Intercept (c[0]): {coefficients[0]}")
-print(f"Slope (c[1]): {coefficients[1]}")
+# with open(output_file, mode="r", encoding="utf-8") as file:
+#     reader = csv.DictReader(file)
+#     for row in reader:
+#         app_ids.append(row["AppID"])
+#         user_scores.append(float(row["User Score (%)"]))
+#         peak_players.append(float(row["Peak Players"]))
+#
+# normalized_user_scores = normalize_data(user_scores)
+# normalized_peak_players = normalize_data(peak_players)
+#
+# coefficients = gradient_descent(normalized_peak_players, normalized_user_scores)
+#
+# print(f"Gradient Descent Coefficients:")
+# print(f"Intercept (c[0]): {coefficients[0]}")
+# print(f"Slope (c[1]): {coefficients[1]}")
