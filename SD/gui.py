@@ -105,7 +105,7 @@ class SteamDashboardGUI:
 
         # Kolom 2: All games
         self.all_games_label = tk.Label(
-            self.main_frame, text="Alle spellen (max. 15):", font=("Arial", 16, "bold"),
+            self.main_frame, text="Alle spellen:", font=("Arial", 16, "bold"),
             bg=self.bg_color, fg=self.accent_color
         )
         self.all_games_label.grid(row=4, column=2, sticky="n", padx=10, pady=(20, 5))
