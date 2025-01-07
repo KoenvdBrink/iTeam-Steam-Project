@@ -5,7 +5,7 @@ nizar = "76561198266159443"
 gamer = "76561198056739081"
 
 # Collect regression data for a specific user
-regression_data = collect_regression_data(nizar)
+regression_data = collect_regression_data(koen)
 
 # Normalize data
 normalized_x, min_x, max_x = normalize_data([d["playtime_hours"] for d in regression_data])

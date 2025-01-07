@@ -477,3 +477,6 @@ def plot_regression(normalized_x, normalized_y, original_x, original_y, coeffici
     ax.spines['right'].set_color(background_color)
 
     plt.show()
+
+def percentile_playtime(steam_id):
+    with open("app_details.csv", "r") as file:
