@@ -5,13 +5,17 @@ from datetime import datetime
 import csv
 import steamspypi
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+from concurrent.futures import ThreadPoolExecutor
+import numpy as np
 
 input_file = "filtered_steam_games.csv"
 output_file = "app_details.csv"
 api_key = "5409DBECBF319D8375208A2EC86A66FE"
 koen = "76561198030044972"
 zack = "76561198055954925"
-test = "76561197974698915"
+nizar = "76561198266159443"
+gamer = "76561198056739081"
 app_ids = []
 user_scores = []
 peak_players = []
@@ -285,11 +289,19 @@ def fetch_app_details(app_ids, output_file="app_details.csv"):
     print(f"Data written to {output_file}")
 
 def normalize_data(data):
+    """
+    Normalizes a list of values and returns the normalized data,
+    along with the min and max values used for normalization.
+
+    :param data: list of numbers.
+    :return: tuple (normalized_data, min_val, max_val).
+    """
     min_val = min(data)
     max_val = max(data)
-    return [(x - min_val) / (max_val - min_val) for x in data]
+    normalized_data = [(x - min_val) / (max_val - min_val) for x in data]
+    return normalized_data, min_val, max_val
 
-def gradient_descent(x, y, num_iterations=10000, learning_rate=0.0001):
+def gradient_descent(x, y, num_iterations=1000, learning_rate=0.001):
     c = [0, 0]
     for i in range(num_iterations):
         for i in range(len(x)):
@@ -299,19 +311,169 @@ def gradient_descent(x, y, num_iterations=10000, learning_rate=0.0001):
             c[1] -= error * x[i] * learning_rate
     return c
 
+def average_playtime_2weeks(steam_id):
+    """
+    Calculates the average minutes per day the user has played games in their steam library over the last 14 days.
+    :param steam_id: str, Steam user's 64-bit ID
+    :return: int, Average playtime in minutes
+    """
+    user_data = get_owned_games(steam_id)
+    time_played = 0
+    for data in user_data:
+        if 'playtime_2weeks' in data:
+            time_played += data['playtime_2weeks']
+    return (time_played / 14)
 
-# with open(output_file, mode="r", encoding="utf-8") as file:
-#     reader = csv.DictReader(file)
-#     for row in reader:
-#         app_ids.append(row["AppID"])
-#         user_scores.append(float(row["User Score (%)"]))
-#         peak_players.append(float(row["Peak Players"]))
-#
-# normalized_user_scores = normalize_data(user_scores)
-# normalized_peak_players = normalize_data(peak_players)
-#
-# coefficients = gradient_descent(normalized_peak_players, normalized_user_scores)
-#
-# print(f"Gradient Descent Coefficients:")
-# print(f"Intercept (c[0]): {coefficients[0]}")
-# print(f"Slope (c[1]): {coefficients[1]}")
+def fetch_game_data(game, steam_id):
+    """
+    Fetches playtime and achievements for a single game,
+    excluding games with 0 achievements.
+
+    :param game: dict, Game data from owned games API.
+    :param steam_id: str, Steam user's 64-bit ID.
+    :return: dict, Processed game data with achievements.
+    """
+    playtime_hours = game['playtime_forever'] / 60
+    if playtime_hours < 1:  # Skip games with less than 1 hour of playtime
+        return None
+
+    achievements = get_game_achievements(steam_id, game['appid'])
+    if achievements == 0:  # Skip games with 0 achievements
+        return None
+
+    return {
+        "game_id": game['appid'],
+        "game_name": game['name'],
+        "playtime_hours": playtime_hours,
+        "achievements_unlocked": achievements,
+    }
+
+def get_game_achievements(steam_id, app_id):
+    url = "https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/"
+    params = {
+        "key": api_key,
+        "steamid": steam_id,
+        "appid": app_id,
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        achievements = response.json().get("playerstats", {}).get("achievements", [])
+        return len(achievements)  # Count of unlocked achievements
+    return 0
+
+def filter_outliers_iqr(data, key="playtime_hours"):
+    """
+    Filters outliers in a dataset based on the IQR method.
+
+    :param data: list of dicts, the dataset.
+    :param key: str, the key to filter by (e.g., "playtime_hours").
+    :return: list of dicts, filtered dataset.
+    """
+    values = [d[key] for d in data]
+    q1 = np.percentile(values, 25)  # 25th percentile
+    q3 = np.percentile(values, 75)  # 75th percentile
+    iqr = q3 - q1  # Interquartile Range
+
+    # Define the outlier bounds
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+
+    # Filter out outliers
+    filtered_data = [d for d in data if lower_bound <= d[key] <= upper_bound]
+    return filtered_data
+
+def collect_regression_data(steam_id, max_games=1000):
+    """
+    Collects total playtime and achievements for the top N most played games in parallel,
+    excluding games with 0 achievements and filtering out outliers using the IQR method.
+
+    :param steam_id: str, Steam user's 64-bit ID.
+    :param max_games: int, Maximum number of games to process.
+    :return: list of dicts containing playtime and achievements data.
+    """
+    owned_games = get_owned_games(steam_id)[:max_games]
+
+    regression_data = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(fetch_game_data, game, steam_id) for game in owned_games]
+        for future in tqdm(futures, desc="Fetching Game Data"):
+            result = future.result()
+            if result:
+                regression_data.append(result)
+
+    # Filter out outliers based on playtime using the IQR method
+    filtered_data = filter_outliers_iqr(regression_data, key="playtime_hours")
+
+    return filtered_data
+
+def prepare_regression_data(data):
+    """
+    Normalizes playtime and achievements for regression.
+
+    :param data: list of dicts with playtime and achievements
+    :return: normalized X and Y arrays
+    """
+    playtime = [d["playtime_hours"] for d in data]
+    achievements = [d["achievements_unlocked"] for d in data]
+
+    normalized_playtime = normalize_data(playtime)
+    normalized_achievements = normalize_data(achievements)
+
+    return normalized_playtime, normalized_achievements
+
+def plot_regression(normalized_x, normalized_y, original_x, original_y, coefficients):
+    """
+    Plots the regression data using normalized data but displays non-normalized axis labels.
+    Uses a Steam-inspired color scheme.
+
+    :param normalized_x: Independent variable (normalized playtime)
+    :param normalized_y: Dependent variable (normalized achievements)
+    :param original_x: Independent variable (original playtime in hours)
+    :param original_y: Dependent variable (original achievements unlocked)
+    :param coefficients: Regression coefficients (computed using normalized data)
+    """
+    # Generate the regression line using normalized data
+    regression_line = [coefficients[0] + coefficients[1] * xi for xi in normalized_x]
+
+    # Set the Steam-inspired colors
+    background_color = "#171a21"  # Dark blue/gray
+    text_color = "#c7d5e0"        # Light gray
+    scatter_color = "#66c0f4"     # Cyan
+    line_color = "#FF0000"        # Bright teal
+    grid_color = "#8f98a0"        # Muted gray
+
+    # Set the figure background
+    plt.figure(figsize=(8, 6), facecolor=background_color)
+    ax = plt.gca()
+    ax.set_facecolor(background_color)
+
+    # Plot the scatter points and regression line
+    plt.scatter(normalized_x, normalized_y, color=scatter_color, alpha=0.7, s=15, label="Data Points")
+    plt.plot(normalized_x, regression_line, color=line_color, label="Regression Line")
+
+    # Get tick positions for normalized data within the range [0, 1]
+    valid_xticks = [t for t in plt.xticks()[0] if 0 <= t <= 1]
+    valid_yticks = [t for t in plt.yticks()[0] if 0 <= t <= 1]
+
+    # Map valid normalized ticks back to original data range
+    original_x_ticks = [min(original_x) + (max(original_x) - min(original_x)) * t for t in valid_xticks]
+    original_y_ticks = [min(original_y) + (max(original_y) - min(original_y)) * t for t in valid_yticks]
+
+    # Set custom tick labels with formatted original values
+    plt.xticks(valid_xticks, [f"{tick:.1f}" for tick in original_x_ticks], color=text_color)
+    plt.yticks(valid_yticks, [f"{tick:.1f}" for tick in original_y_ticks], color=text_color)
+
+    # Add labels, legend, and grid
+    plt.xlabel("Playtime (hours)", color=text_color)
+    plt.ylabel("Achievements Unlocked", color=text_color)
+    plt.legend(facecolor=background_color, edgecolor=grid_color, labelcolor=text_color)
+    plt.grid(True, linestyle="--", color=grid_color, alpha=0.5)
+    plt.title("Playtime vs Achievements (Steam Theme)", color=text_color)
+
+    # Adjust plot border colors
+    ax.spines['bottom'].set_color(grid_color)
+    ax.spines['left'].set_color(grid_color)
+    ax.spines['top'].set_color(background_color)  # Hide top and right spines
+    ax.spines['right'].set_color(background_color)
+
+    plt.show()
