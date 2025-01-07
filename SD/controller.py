@@ -32,7 +32,7 @@ def update_dashboard(steam_id, gui):
         top_games = most_played_games(steam_id, top_n=5)
 
         # Alle spellen (alleen namen voor nu)
-        all_games = [game['name'] for game in get_owned_games(steam_id)[:15]]
+        all_games = [game['name'] for game in get_owned_games(steam_id)]
 
         # Update GUI
         gui.update_labels(name, online_status, last_logoff_time)
