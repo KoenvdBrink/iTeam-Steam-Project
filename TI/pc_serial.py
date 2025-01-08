@@ -33,7 +33,7 @@ print("[INFO] Beschikbare seriële poorten:")
 for port in serial_ports:
     print(f"Poort: {port.device}, Beschrijving: {port.description}")
 
-# Filter de poorten om automatisch de juiste te vinden (nu met COM in plaats van ttyUSB of cu.usbmodem)
+# Filter de poorten om automatisch de juiste te vinden zodat er direct verbinding gemaakt kan worden met de pico
 pico_port = None
 for port in serial_ports:
     if "COM" in port.device:  # Controleren of het een COM-poort is
