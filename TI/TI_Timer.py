@@ -150,6 +150,8 @@ def update_timer(t):
         lcd.putstr("Tijd is om!")
         time.sleep(2)
         timer.deinit()
+        reset_pico(12)
+        time.sleep(1)
         lcd.clear()
         lcd.putstr("Timer: 00:00:00")
         global is_running
@@ -180,7 +182,7 @@ def reset_timer(pin):
 # Reste pico 
 def reset_pico(pin):
     lcd.clear()
-    lcd.putstr("Resetting Pico")
+    lcd.putstr("Resetting")        
     time.sleep(3)
     machine.reset()
 
