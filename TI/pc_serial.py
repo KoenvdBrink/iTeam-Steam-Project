@@ -1,9 +1,23 @@
+import sys
+import os
+
+# Voeg het pad naar de AI-map toe
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'AI')))
+
 from serial.tools import list_ports
 import serial
-from AI.steam_data_main import average_playtime_2weeks
+from steam_data_main import average_playtime_2weeks
 
-# Get average playtime from average_playtime_2weeks function in steam_data_main.py
-data = int(round(average_playtime_2weeks(steam_id='76561198030044972') * 60, 0))
+# Controleer of een Steam ID als argument is meegegeven
+if len(sys.argv) > 1:
+    steam_id = sys.argv[1]  # Haal Steam ID op uit command line argument
+    print(f"[INFO] Steam ID ontvangen: {steam_id}")
+else:
+    steam_id = '76561198030044972'  # Standaard Steam ID
+    print("[WARNING] Geen Steam ID opgegeven, standaard ID wordt gebruikt.")
+
+# Haal gemiddelde speeltijd op basis van het Steam ID
+data = int(round(average_playtime_2weeks(steam_id=steam_id) * 60, 0))
 str(data)
 
 def read_serial(port):

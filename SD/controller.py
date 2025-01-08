@@ -1,6 +1,7 @@
 import sys
 import os
 from datetime import datetime
+import subprocess
 sys.path.append(os.path.abspath("../AI"))
 
 from steam_data_main import (
@@ -16,6 +17,7 @@ from steam_data_main import (
     normalize_data,
     gradient_descent
 )
+
 
 def update_dashboard(steam_id, gui):
     try:
@@ -35,7 +37,6 @@ def update_dashboard(steam_id, gui):
             last_logoff_time = "Niet beschikbaar"
 
         # Gemiddelde speeltijd
-        # avg_playtime = average_playtime(steam_id)
         mdn_playtime = round(median_playtime(steam_id), 1)
         avg_playtime_2weeks = round(average_playtime_2weeks(steam_id), 1)
 
@@ -55,12 +56,35 @@ def update_dashboard(steam_id, gui):
             name,
             online_status,
             last_logoff_time,
-            # avg_playtime,
             mdn_playtime,
             avg_playtime_2weeks
         )
         gui.update_games_list(top_games)
         gui.update_graph(normalized_x, normalized_y, original_x, original_y, coefficients)
 
+        # Start timer met dynamisch Steam ID
+        start_timer_with_steam_id(steam_id)
+
     except Exception as e:
         print(f"Fout bij ophalen van gegevens: {e}")
+
+
+def start_timer_with_steam_id(steam_id):
+    """Start pc_serial.py met een dynamisch Steam ID."""
+    try:
+        # Dynamisch pad bepalen naar pc_serial.py
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../TI/pc_serial.py"))
+
+        # Controleer of het bestand bestaat
+        if not os.path.isfile(script_path):
+            raise FileNotFoundError(f"Bestand niet gevonden op pad: {script_path}")
+
+        # Voer het script uit en geef het Steam ID mee
+        subprocess.run(["python", script_path, steam_id], check=True)
+        print(f"[INFO] Timer gestart met Steam ID: {steam_id}")
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Fout bij uitvoeren van pc_serial.py: {e}")
+    except FileNotFoundError as e:
+        print(f"[ERROR] Bestand niet gevonden: {e}")
+    except Exception as e:
+        print(f"[ERROR] Onverwachte fout: {e}")
