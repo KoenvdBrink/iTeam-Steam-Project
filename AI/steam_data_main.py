@@ -8,6 +8,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
+from Fetch_data_server import fetch_average_playtime
+
 
 input_file = "filtered_steam_games.csv"
 output_file = "app_details.csv"
@@ -19,6 +21,7 @@ gamer = "76561198056739081"
 app_ids = []
 user_scores = []
 peak_players = []
+
 
 def get_player_summ(steam_id):
     """
@@ -478,5 +481,7 @@ def plot_regression(normalized_x, normalized_y, original_x, original_y, coeffici
 
     plt.show()
 
-def percentile_playtime(steam_id):
-    with open("app_details.csv", "r") as file:
+def playtime_comparison(steam_id):
+    user = average_playtime(steam_id) / 60
+    global_time = fetch_average_playtime()
+    return(user/global_time) * 100
