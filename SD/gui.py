@@ -13,6 +13,7 @@ class SteamDashboardGUI:
         self.bg_color = "#1b2838"
         self.text_color = "#c7d5e0"
         self.accent_color = "#66c0f4"
+        self.error_color = "#FF0000"
 
         self.root.title("Steam Dashboard")
         self.root.geometry("1400x800")
@@ -22,9 +23,11 @@ class SteamDashboardGUI:
         self.main_frame = tk.Frame(root, bg=self.bg_color)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Rijen en columns aangemaakt
-        for col in range(3):
-            self.main_frame.grid_columnconfigure(col, weight=1)
+        # Vaste kolombreedtes
+        self.main_frame.grid_columnconfigure(0, weight=0, minsize=300)  # Kolom 0: vaste breedte
+        self.main_frame.grid_columnconfigure(1, weight=1, minsize=500)  # Kolom 1: flexibele breedte
+        self.main_frame.grid_columnconfigure(2, weight=1, minsize=600)  # Kolom 2: grafiek
+
         for row in range(20):
             self.main_frame.grid_rowconfigure(row, weight=0, minsize=20)
 
@@ -49,7 +52,12 @@ class SteamDashboardGUI:
         )
         self.title_label.grid(row=0, column=1, sticky="n", pady=50)
 
-        # Steam ID invoerveld gecentreerd
+        # Steam ID invoerveld
+        self.error_label = tk.Label(
+            self.main_frame, text="", font=("Arial", 12), bg=self.bg_color, fg=self.error_color
+        )
+        self.error_label.grid(row=0, column=1, sticky="n", pady=(5, 5))
+
         self.steam_id_label = tk.Label(
             self.main_frame, text="Voer Steam ID in:", font=("Arial", 14),
             bg=self.bg_color, fg=self.text_color
@@ -74,41 +82,36 @@ class SteamDashboardGUI:
         )
         self.account_info_label.grid(row=4, column=0, sticky="w", padx=10, pady=(20, 5))
 
+        small_font = ("Arial", 12)
         self.name_label = tk.Label(
-            self.main_frame, text="Naam: -", font=("Arial", 14),
+            self.main_frame, text="Naam: -", font=small_font,
             bg=self.bg_color, fg=self.text_color
         )
         self.name_label.grid(row=5, column=0, sticky="w", padx=10)
 
         self.status_label = tk.Label(
-            self.main_frame, text="Status: -", font=("Arial", 14),
+            self.main_frame, text="Status: -", font=small_font,
             bg=self.bg_color, fg=self.text_color
         )
         self.status_label.grid(row=6, column=0, sticky="w", padx=10)
 
         self.last_logoff_label = tk.Label(
-            self.main_frame, text="Laatst uitgelogd: -", font=("Arial", 14),
+            self.main_frame, text="Laatst uitgelogd: -", font=small_font,
             bg=self.bg_color, fg=self.text_color
         )
         self.last_logoff_label.grid(row=7, column=0, sticky="w", padx=10)
 
         self.median_playtime_label = tk.Label(
-            self.main_frame, text="Mediaan speeltijd: -", font=("Arial", 14),
+            self.main_frame, text="Mediaan speeltijd: -", font=small_font,
             bg=self.bg_color, fg=self.text_color
         )
         self.median_playtime_label.grid(row=8, column=0, sticky="w", padx=10)
 
         self.average_playtime_2weeks_label = tk.Label(
-            self.main_frame, text="Gem. speeltijd (2 weken): -", font=("Arial", 14),
+            self.main_frame, text="Gem. speeltijd (2 weken): -", font=small_font,
             bg=self.bg_color, fg=self.text_color
         )
         self.average_playtime_2weeks_label.grid(row=9, column=0, sticky="w", padx=10)
-
-        # self.average_playtime_label = tk.Label(
-        # self.main_frame, text="Totale speeltijd: -", font=("Arial", 14),
-        # bg=self.bg_color, fg=self.text_color
-        # )
-        # self.average_playtime_label.grid(row=10, column=0, sticky="w", padx=10)
 
         # Kolom 1: Top 20 games
         self.games_label = tk.Label(
@@ -125,27 +128,36 @@ class SteamDashboardGUI:
 
         # Kolom 2: Grafiek
         self.graph_label = tk.Label(
-        self.main_frame, text="Playtime vs Achievements", font=("Arial", 16, "bold"),
-        bg=self.bg_color, fg=self.accent_color
+            self.main_frame, text="Playtime vs Achievements", font=("Arial", 16, "bold"),
+            bg=self.bg_color, fg=self.accent_color
         )
         self.graph_label.grid(row=4, column=2, sticky="n", padx=10, pady=(20, 5))
 
         self.graph_frame = tk.Frame(
-            self.main_frame, bg=self.bg_color, bd=2, relief="ridge"
+            self.main_frame, bg=self.bg_color, bd=2, relief="ridge", width=600, height=400
         )
         self.graph_frame.grid(row=5, column=2, rowspan=12, sticky="nsew", padx=10, pady=5)
+        self.graph_frame.grid_propagate(False)
+        self.placeholder_label = tk.Label(
+            self.graph_frame, text="Voer uw steam ID in", bg=self.bg_color, fg=self.text_color, font=("Arial", 12)
+        )
+        self.placeholder_label.place(relx=0.5, rely=0.5, anchor="center")
 
     def on_submit(self):
         steam_id = self.steam_id_entry.get()
         if steam_id:
+            self.set_error_message("")
             self.update_callback(steam_id)
 
-    def update_labels(self, name, status, last_logoff, mdn_playtime, avg_playtime_2weeks): # Removed avg_playtime for temp testing
+    def set_error_message(self, message):
+        self.error_label.config(text=message)
+
+    def update_labels(self, name, status, last_logoff, mdn_playtime, avg_playtime_2weeks): # avg_playtime tijdelijk weg gehaalt voor testen.
         self.name_label.config(text=f"Naam: {name}")
         self.status_label.config(text=f"Status: {status}")
         self.last_logoff_label.config(text=f"Laatst uitgelogd: {last_logoff}")
         self.median_playtime_label.config(text=f"Mediaan speeltijd: {mdn_playtime} uur")
-        self.average_playtime_2weeks_label.config(text=f"Gem. speeltijd (2 weken): {avg_playtime_2weeks} uur")
+        self.average_playtime_2weeks_label.config(text=f"Gem. speeltijd (2 weken): {avg_playtime_2weeks} minuten")
         # self.average_playtime_label.config(text=f"Totale speeltijd: {avg_playtime} uur")
 
     def update_games_list(self, games):
