@@ -56,9 +56,32 @@ def update_dashboard(steam_id, gui):
         # Start aparte thread voor het laden van de grafiek
         load_graph_in_thread(steam_id, gui)
 
+        # Start timer met dynamisch Steam ID
+        start_timer_with_steam_id(steam_id)
+
     except Exception as e:
         print(f"Fout bij ophalen van gegevens: {e}")
         gui.set_error_message("Ongeldig Steam ID of fout bij ophalen van gegevens.")
+
+def start_timer_with_steam_id(steam_id):
+    """Start pc_serial.py met een dynamisch Steam ID."""
+    try:
+        # Dynamisch pad bepalen naar pc_serial.py
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../TI/pc_serial.py"))
+
+        # Controleer of het bestand bestaat
+        if not os.path.isfile(script_path):
+            raise FileNotFoundError(f"Bestand niet gevonden op pad: {script_path}")
+
+        # Voer het script uit en geef het Steam ID mee
+        subprocess.run(["python", script_path, steam_id], check=True)
+        print(f"[INFO] Timer gestart met Steam ID: {steam_id}")
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Fout bij uitvoeren van pc_serial.py: {e}")
+    except FileNotFoundError as e:
+        print(f"[ERROR] Bestand niet gevonden: {e}")
+    except Exception as e:
+        print(f"[ERROR] Onverwachte fout: {e}")
 
 
 def load_graph_in_thread(steam_id, gui):
