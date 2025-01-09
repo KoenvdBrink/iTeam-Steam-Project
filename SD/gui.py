@@ -113,6 +113,18 @@ class SteamDashboardGUI:
         )
         self.average_playtime_2weeks_label.grid(row=9, column=0, sticky="w", padx=10)
 
+        self.average_playtime_label = tk.Label(
+        self.main_frame, text="Gem. speeltijd: -", font=small_font,
+        bg=self.bg_color, fg=self.text_color
+        )
+        self.average_playtime_label.grid(row=10, column=0, sticky="w", padx=10)
+
+        self.comparison_label = tk.Label(
+        self.main_frame, text="Voer je Steam ID in en ontdek je speeltijdscore!", font=small_font,
+        bg=self.bg_color, fg=self.text_color, justify="left", anchor="w", wraplength=300
+        )
+        self.comparison_label.grid(row=11, column=0, sticky="w", padx=10)
+
         # Kolom 1: Top 20 games
         self.games_label = tk.Label(
             self.main_frame, text="Top 20 meest gespeelde games:", font=("Arial", 16, "bold"),
@@ -152,13 +164,14 @@ class SteamDashboardGUI:
     def set_error_message(self, message):
         self.error_label.config(text=message)
 
-    def update_labels(self, name, status, last_logoff, mdn_playtime, avg_playtime_2weeks): # avg_playtime tijdelijk weg gehaalt voor testen.
+    def update_labels(self, name, status, last_logoff, mdn_playtime, avg_playtime_2weeks, avg_playtime, comparison_text):
         self.name_label.config(text=f"Naam: {name}")
         self.status_label.config(text=f"Status: {status}")
         self.last_logoff_label.config(text=f"Laatst uitgelogd: {last_logoff}")
         self.median_playtime_label.config(text=f"Mediaan speeltijd: {mdn_playtime} uur")
         self.average_playtime_2weeks_label.config(text=f"Gem. speeltijd (2 weken): {avg_playtime_2weeks} minuten")
-        # self.average_playtime_label.config(text=f"Totale speeltijd: {avg_playtime} uur")
+        self.average_playtime_label.config(text=f"Gem. speeltijd: {avg_playtime} uur")
+        self.comparison_label.config(text=comparison_text)
 
     def update_games_list(self, games):
         self.games_list.delete(0, tk.END)

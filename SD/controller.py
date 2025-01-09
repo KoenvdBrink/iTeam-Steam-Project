@@ -15,7 +15,8 @@ from steam_data_main import (
     average_playtime_2weeks,
     collect_regression_data,
     normalize_data,
-    gradient_descent
+    gradient_descent,
+    playtime_comparison
 )
 
 
@@ -37,11 +38,24 @@ def update_dashboard(steam_id, gui):
             last_logoff_time = "Niet beschikbaar"
 
         # Gemiddelde speeltijd
-        mdn_playtime = round(median_playtime(steam_id), 1)
+        mdn_playtime = round(median_playtime(steam_id) / 60, 1)
         avg_playtime_2weeks = round(average_playtime_2weeks(steam_id), 1)
+        avg_playtime = round(average_playtime(steam_id) / 60, 1)
 
         # Top 20 meest gespeelde games
         top_games = most_played_games(steam_id, top_n=20)
+
+        comparison_percentage = playtime_comparison(steam_id)
+        if comparison_percentage < 100:
+            comparison_text = (
+                f"Vergeleken met de gemiddelde Steam user's game time heb jij {round(comparison_percentage, 1)}%. "
+                f"Dit is {round(100 - comparison_percentage, 1)}% minder dan het gemiddelde."
+            )
+        else:
+            comparison_text = (
+                f"Vergeleken met de gemiddelde Steam user's game time heb jij {round(comparison_percentage, 1)}%. "
+                f"Dit is {round(comparison_percentage - 100, 1)}% meer dan het gemiddelde."
+            )
 
         # Update GUI zonder grafiek
         gui.update_labels(
@@ -49,7 +63,9 @@ def update_dashboard(steam_id, gui):
             online_status,
             last_logoff_time,
             mdn_playtime,
-            avg_playtime_2weeks
+            avg_playtime_2weeks,
+            avg_playtime,
+            comparison_text
         )
         gui.update_games_list(top_games)
 
