@@ -1,11 +1,14 @@
-from machine import Pin, Timer, I2C
+from machine import Pin, Timer, I2C, UART
 import time
 import lcd_api
 from pico_i2c_lcd import I2cLcd
 import neopixel
 import math
 import utime
+import machine
 
+# Stel seriële communicatie in
+uart = UART(0, baudrate=115200, tx=Pin(0), rx=Pin(1))  # Pas aan voor jouw Pico-pinnen
 
 # Pins setup for buttons
 button_pin = Pin(17, Pin.IN, Pin.PULL_UP)
@@ -41,7 +44,7 @@ lcd.putstr("Timer: 00:00:00")
 # Timer object
 timer = Timer()
 
-# Process incomming serial data
+# Process incoming serial data
 def process_serial_data():
     global timer_seconds
     try:
@@ -55,7 +58,6 @@ def process_serial_data():
 # Measure distance 
 def measure_distance():
     global is_running
-    toggle_using_sensor = False
     trigger.low()
     time.sleep(1)
     trigger.high()
@@ -71,11 +73,14 @@ def measure_distance():
     timepassed = signalon - signaloff
     distance = (timepassed * 0.0343) / 2
     
-    # Pause the timer if the distance is greater than 50 cm
+    # Pauzeer de timer als de afstand groter dan 50 cm
     if distance > 50 and is_running:
-        timer.deinit() # Deinitialize timer
+        timer.deinit()  # Deinitialize timer
         is_running = False
-        toggle_using_sensor = True
+        uart.write("Timer gepauzeerd door afstandssensor\n")  # Bericht naar de pc sturen
+        print("Timer gepauzeerd door afstandssensor")
+    
+    return distance
 
 # Update NeoPixels based on remaining time
 def update_neopixels(total_time, remaining_time):
@@ -120,17 +125,19 @@ def toggle_timer(pin):
     if time.ticks_diff(current_time, last_press_time) > 200:
         last_press_time = current_time
         if is_running:
-            # Pause timer
+            # Pauzeer timer
             timer.deinit()
             is_running = False
+            uart.write("Timer gepauzeerd\n")  # Bericht naar de pc sturen
             print("Timer gepauzeerd")
         else:
             # Start timer
             total_time = timer_seconds
             timer.init(period=1000, mode=Timer.PERIODIC, callback=update_timer)
             is_running = True
+            uart.write("Timer gestart\n")  # Bericht naar de pc sturen
             print("Timer gestart")
-            
+
 # Update timer display on the LCD
 def update_timer(t):
     global timer_seconds
@@ -160,8 +167,11 @@ def update_timer(t):
 # Update LCD display with current remaining time
 def update_display():
     formatted_time = format_time(timer_seconds)
+ #   distance = round(measure_distance(), 2)
     lcd.clear()
     lcd.putstr(f"Timer: {formatted_time}")
+    # lcd.move_to(0, 1)
+    # lcd.putstr(f"Distance: {distance}")
 
 # Reset timer
 def reset_timer(pin):
@@ -177,22 +187,20 @@ def reset_timer(pin):
 
     lcd.clear()
     lcd.putstr("Timer: 00:00:00")
-    print("Timer gereset")
 
-# Reste pico 
+# Reset pico 
 def reset_pico(pin):
     lcd.clear()
     lcd.putstr("Resetting")        
     time.sleep(3)
     machine.reset()
 
-
 # Associate button interrupts with functions
 button_pin.irq(trigger=Pin.IRQ_FALLING, handler=toggle_timer)
 btn_reset.irq(trigger=Pin.IRQ_FALLING, handler=reset_timer)
 btn_power.irq(trigger=Pin.IRQ_FALLING, handler=reset_pico)
 
-# Associate button interrupts with time adjustmets
+# Associate button interrupts with time adjustments
 btn_hour.irq(trigger=Pin.IRQ_FALLING, handler=lambda pin: add_time(3600))
 btn_min.irq(trigger=Pin.IRQ_FALLING, handler=lambda pin: add_time(60))
 btn_sec.irq(trigger=Pin.IRQ_FALLING, handler=lambda pin: add_time(1))
