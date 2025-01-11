@@ -1,6 +1,7 @@
 import sys
 import os
 from datetime import datetime
+from threading import Thread
 import subprocess
 sys.path.append(os.path.abspath("../AI"))
 
@@ -18,6 +19,10 @@ from steam_data_main import (
     gradient_descent,
     playtime_comparison
 )
+
+sys.path.append(os.path.abspath("../TI"))
+
+from timer_status import get_timer_status
 
 
 def update_dashboard(steam_id, gui):
@@ -77,7 +82,17 @@ def update_dashboard(steam_id, gui):
         print(f"Fout bij ophalen van gegevens: {e}")
         gui.set_error_message("Ongeldig Steam ID of fout bij ophalen van gegevens.")
 
-def start_timer_with_steam_id(steam_id):
+
+def start_timer_status_thread(gui):
+    """Start een thread om de timerstatus live bij te houden."""
+    def run_status_updater():
+        get_timer_status(gui.update_timer_status)
+
+    thread = Thread(target=run_status_updater, daemon=True)
+    thread.start()
+
+
+def start_timer_with_steam_id(steam_id, gui):
     """Start pc_serial.py met een dynamisch Steam ID."""
     try:
         # Dynamisch pad bepalen naar pc_serial.py
@@ -90,6 +105,10 @@ def start_timer_with_steam_id(steam_id):
         # Voer het script uit en geef het Steam ID mee
         subprocess.run(["python", script_path, steam_id], check=True)
         print(f"[INFO] Timer gestart met Steam ID: {steam_id}")
+
+        # Start checking status after starting timer
+        start_timer_status_thread(gui)
+        
     except subprocess.CalledProcessError as e:
         print(f"[ERROR] Fout bij uitvoeren van pc_serial.py: {e}")
     except FileNotFoundError as e:
@@ -113,7 +132,7 @@ def load_graph_in_thread(steam_id, gui):
             # Grafiekdata berekenen
             regression_data = collect_regression_data(steam_id)
             normalized_x, min_x, max_x = normalize_data([d["playtime_hours"] for d in regression_data])
-            normalized_y, min_y, max_y = normalize_data([d["achievements_unlocked"] for d in regression_data])
+            normalized_y,  min_y, max_y = normalize_data([d["achievements_unlocked"] for d in regression_data])
             coefficients = gradient_descent(normalized_x, normalized_y)
             original_x = [d["playtime_hours"] for d in regression_data]
             original_y = [d["achievements_unlocked"] for d in regression_data]
