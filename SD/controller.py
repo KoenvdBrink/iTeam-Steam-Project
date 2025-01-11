@@ -112,8 +112,8 @@ def load_graph_in_thread(steam_id, gui):
 
             # Grafiekdata berekenen
             regression_data = collect_regression_data(steam_id)
-            normalized_x, min_x, max_x = normalize_data([d["playtime_hours"] for d in regression_data])
-            normalized_y, min_y, max_y = normalize_data([d["achievements_unlocked"] for d in regression_data])
+            normalized_x = normalize_data([d["playtime_hours"] for d in regression_data])
+            normalized_y = normalize_data([d["achievements_unlocked"] for d in regression_data])
             coefficients = gradient_descent(normalized_x, normalized_y)
             original_x = [d["playtime_hours"] for d in regression_data]
             original_y = [d["achievements_unlocked"] for d in regression_data]
