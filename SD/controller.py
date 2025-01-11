@@ -48,13 +48,11 @@ def update_dashboard(steam_id, gui):
         comparison_percentage = playtime_comparison(steam_id)
         if comparison_percentage < 100:
             comparison_text = (
-                f"Vergeleken met de gemiddelde Steam user's game time heb jij {round(comparison_percentage, 1)}%. "
-                f"Dit is {round(100 - comparison_percentage, 1)}% minder dan het gemiddelde."
+                f"Gemiddeld, game jij {round(100 - comparison_percentage, 1)}% minder dan andere steam users."
             )
         else:
             comparison_text = (
-                f"Vergeleken met de gemiddelde Steam user's game time heb jij {round(comparison_percentage, 1)}%. "
-                f"Dit is {round(comparison_percentage - 100, 1)}% meer dan het gemiddelde."
+                f"Gemiddeld, game jij {round(comparison_percentage - 100, 1)}% meer dan andere steam users."
             )
 
         # Update GUI zonder grafiek
