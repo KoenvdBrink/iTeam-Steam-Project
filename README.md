@@ -17,6 +17,8 @@ Het project is ontwikkeld voor het tweede blok van het eerste jaar van de opleid
 - Een gebruiksvriendelijk dashboard dat interactieve grafieken en statistieken toont.
 
 
+
+
 ## Installatie
 
 Volg de onderstaande stappen om het project te installeren en uit te voeren:
@@ -58,6 +60,8 @@ Run het programma door het volgende commando uit te voeren in de terminal:
 ```
 py dashboard_main.py
 ```
+
+
 
 
 ## Navigatie-instructies
@@ -130,6 +134,8 @@ Ongeldig Steam ID of fout bij ophalen van gegevens:
 - Als het probleem aanhoudt, kan het liggen aan tijdelijke problemen met de Steam API.
 
 
+
+
 ## Benodigde Afhankelijkheden
 
 ### Lijst van vereiste Python-modules
@@ -169,6 +175,8 @@ Voor volledig gebruik moet de PostgreSQL-database draaien met de juiste configur
 ### Python-versie
 
 - Het programma vereist Python 3.10 of hoger.
+
+
 
 
 ## Contributors
