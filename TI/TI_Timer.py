@@ -7,8 +7,8 @@ import math
 import utime
 import machine
 
-# Stel seriële communicatie in
-uart = UART(0, baudrate=115200, tx=Pin(0), rx=Pin(1))  # Pas aan voor jouw Pico-pinnen
+# Enable serial communication
+uart = UART(0, baudrate=115200, tx=Pin(0), rx=Pin(1))
 
 # Pins setup for buttons
 button_pin = Pin(17, Pin.IN, Pin.PULL_UP)
@@ -83,7 +83,7 @@ def measure_distance():
     if distance > 50 and is_running:
         is_running = False
         timer.deinit()  # Deinitialize timer
-        uart.write("Timer gepauzeerd door afstandssensor\n")  # Bericht naar de pc sturen
+        uart.write("Timer gepauzeerd door afstandssensor\n") # send message to dashboard
         print("Timer gepauzeerd door afstandssensor")
     
     return distance
@@ -134,14 +134,14 @@ def toggle_timer(pin):
             # Pauzeer timer
             timer.deinit()
             is_running = False
-            uart.write("Timer gepauzeerd\n")  # Bericht naar de pc sturen
+            uart.write("Timer gepauzeerd\n")  # Send message to dashboard
             print("Timer gepauzeerd")
         else:
             # Start timer
             total_time = timer_seconds
             timer.init(period=1000, mode=Timer.PERIODIC, callback=update_timer)
             is_running = True
-            uart.write("Timer gestart\n")  # Bericht naar de pc sturen
+            uart.write("Timer gestart\n")  # Send message to dashboard
             print("Timer gestart")
 
 # Update timer display on the LCD
@@ -173,11 +173,8 @@ def update_timer(t):
 # Update LCD display with current remaining time
 def update_display():
     formatted_time = format_time(timer_seconds)
-    distance = round(measure_distance(), 2)
     lcd.clear()
     lcd.putstr(f"Timer: {formatted_time}")
-    # lcd.move_to(0, 1)
-    # lcd.putstr(f"Distance: {distance}")
 
 # Reset timer
 def reset_timer(pin):
