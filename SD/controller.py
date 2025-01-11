@@ -76,7 +76,7 @@ def update_dashboard(steam_id, gui):
         load_graph_in_thread(steam_id, gui)
 
         # Start timer met dynamisch Steam ID
-        start_timer_with_steam_id(steam_id)
+        start_timer_with_steam_id(steam_id, gui)
 
     except Exception as e:
         print(f"Fout bij ophalen van gegevens: {e}")
