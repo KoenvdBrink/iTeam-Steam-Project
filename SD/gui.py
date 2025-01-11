@@ -155,6 +155,21 @@ class SteamDashboardGUI:
         )
         self.placeholder_label.place(relx=0.5, rely=0.5, anchor="center")
 
+        # Timer Status Label - rechts boven
+        self.timer_status_label = tk.Label(
+            self.main_frame,
+            text="Timer Status: -",
+            anchor="e",  # Rechts uitlijnen
+            font=("Arial", 12),
+            bg=self.bg_color,
+            fg=self.text_color
+        )
+        self.timer_status_label.place(relx=0.98, rely=0.02, anchor="ne")
+
+    def update_timer_status(self, message):
+        """Update de Timer Status met een nieuw bericht."""
+        self.timer_status_label.config(text=f"Timer Status: {message}")
+
     def on_submit(self):
         steam_id = self.steam_id_entry.get()
         if steam_id:
