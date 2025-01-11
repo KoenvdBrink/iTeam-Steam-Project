@@ -49,7 +49,13 @@ def process_serial_data():
     global timer_seconds
     try:
         data = input()
-        received_seconds = int(data)
+        int(data)
+        if int(data) <= 3600:
+            received_seconds = 3600
+        elif data > 21600:
+            received_seconds = 21600
+        else:
+            received_seconds = data
         timer_seconds = received_seconds
         update_display()
     except ValueError:
@@ -75,8 +81,8 @@ def measure_distance():
     
     # Pauzeer de timer als de afstand groter dan 50 cm
     if distance > 50 and is_running:
-        timer.deinit()  # Deinitialize timer
         is_running = False
+        timer.deinit()  # Deinitialize timer
         uart.write("Timer gepauzeerd door afstandssensor\n")  # Bericht naar de pc sturen
         print("Timer gepauzeerd door afstandssensor")
     
@@ -167,7 +173,7 @@ def update_timer(t):
 # Update LCD display with current remaining time
 def update_display():
     formatted_time = format_time(timer_seconds)
- #   distance = round(measure_distance(), 2)
+    distance = round(measure_distance(), 2)
     lcd.clear()
     lcd.putstr(f"Timer: {formatted_time}")
     # lcd.move_to(0, 1)
@@ -217,5 +223,7 @@ try:
 except KeyboardInterrupt:
     print("Programma gestopt")
     timer.deinit()
+
+
 
 
