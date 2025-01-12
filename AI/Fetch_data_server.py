@@ -11,8 +11,6 @@ port = 5432
 
 def fetch_average_playtime():
     try:
-        # Gebruik mock-waarde
-        print("[INFO] Gebruik van gecachede waarde omdat database niet draait.")
         # return 90.0  # Gemiddelde speeltijd in uren als voorbeeld voor testen
         # Establish connection
         conn = psycopg2.connect(
